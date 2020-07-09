@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Thread;
+use App\{
+    User,
+    Thread
+};
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class ThreadController extends Controller
 {
@@ -46,7 +50,12 @@ class ThreadController extends Controller
     public function store(Request $request)
     {
         try {
-            $this->thread->create($request->all());
+            $thread = $request->all();
+            $thread['slug'] = Str::slug($thread['title']);
+
+            $user = User::find(1);
+            $user->threads()->create($thread);
+
             dd('Tópico criado com sucesso');
         }catch (\Exception $e) {
             dd($e->getMessage());
@@ -62,6 +71,11 @@ class ThreadController extends Controller
     public function show($thread)
     {
         $thread = $this->thread->whereSlug($thread)->first();
+
+        if (!$thread)
+        {
+            return redirect()->route('threads.index');
+        }
 
         return view('threads.show', compact('thread'));
     }
@@ -83,13 +97,13 @@ class ThreadController extends Controller
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
+     * @param  string $thread
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $thread)
     {
         try {
-            $thread = $this->thread->find($id);
+            $thread = $this->thread->whereSlug($thread)->first();
             $thread->update($request->all());
 
             dd('Tópico atualizado com sucesso');
@@ -101,13 +115,13 @@ class ThreadController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
+     * @param  string $thread
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(string $thread)
     {
         try {
-            $thread = $this->thread->find($id);
+            $thread = $this->thread->whereSlug($thread)->first();
             $thread->delete();
 
             dd('Tópico removido com sucesso');
