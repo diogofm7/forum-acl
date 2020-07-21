@@ -28,6 +28,34 @@
             </div>
             <hr>
         </div>
+
+        <div class="col-12">
+            <h5>Respostas</h5>
+            <hr>
+            @foreach($thread->replies as $reply)
+                <div class="card mb-2">
+                    <div class="card-body">
+                        {{ $reply->reply }}
+                    </div>
+                    <div class="card-footer">
+                        <small>Respondido por {{ $reply->user->name }} a {{ $reply->created_at->diffForHumans() }}</small>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+
+        <div class="col-12">
+            <hr>
+            <form action="{{ route('replies.store') }}" method="post">
+                @csrf
+                <div class="form-group">
+                    <input type="hidden" name="thread_id" value="{{ $thread->id }}">
+                    <label>Responder</label>
+                    <textarea name="reply" cols="30" rows="5" class="form-control"></textarea>
+                </div>
+                <button type="submit" class="btn btn-success">Responder</button>
+            </form>
+        </div>
     </div>
 
 @endsection
