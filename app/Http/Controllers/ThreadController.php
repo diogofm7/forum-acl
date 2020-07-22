@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\{
-    User,
-    Thread
-};
+use App\{Channel, User, Thread};
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
+use App\Http\Requests\ThreadRequest;
 
 class ThreadController extends Controller
 {
@@ -24,9 +23,20 @@ class ThreadController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        $threads = $this->thread->orderBy('created_at', 'DESC')->paginate(15);
+        //$this->authorize('access-index-thread');
+
+//        if(!Gate::allows('access-index-thread')){
+//            return dd('Não tenho permissão!!!');
+//        }
+
+        $channelParam = $request->channel;
+        if($channelParam){
+            $threads = Channel::whereSlug($channelParam)->first()->threads()->paginate(15);
+        }else{
+            $threads = $this->thread->orderBy('created_at', 'DESC')->paginate(15);
+        }
 
         return view('threads.index', compact('threads'));
     }
@@ -38,7 +48,9 @@ class ThreadController extends Controller
      */
     public function create()
     {
-        return view('threads.create');
+        $channels = Channel::all();
+
+        return view('threads.create', compact('channels'));
     }
 
     /**
@@ -47,14 +59,15 @@ class ThreadController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(ThreadRequest $request)
     {
         try {
             $thread = $request->all();
             $thread['slug'] = Str::slug($thread['title']);
 
             $user = User::find(1);
-            $user->threads()->create($thread);
+
+            $thread = $user->threads()->create($thread);
 
             flash('Tópico criado com sucesso')->success();
             return redirect()->route('threads.show', $thread->slug);
@@ -93,6 +106,7 @@ class ThreadController extends Controller
     public function edit($thread)
     {
         $thread = $this->thread->whereSlug($thread)->first();
+        $this->authorize('update', $thread);
 
         return view('threads.edit', compact('thread'));
     }
@@ -104,7 +118,7 @@ class ThreadController extends Controller
      * @param  string $thread
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $thread)
+    public function update(ThreadRequest $request, $thread)
     {
         try {
             $thread = $this->thread->whereSlug($thread)->first();
