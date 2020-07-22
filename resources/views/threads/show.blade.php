@@ -15,7 +15,9 @@
                 <div class="card-body">
                     {{ $thread->body }}
                 </div>
+
                 <div class="card-footer">
+                    @can('update', $thread)
                     <a href="{{ route('threads.edit', $thread->slug) }}" class="btn btn-sm btn-primary">Editar</a>
 
                     <a  href="#" class="btn btn-sm btn-danger"
@@ -24,11 +26,13 @@
                         @csrf
                         @method('DELETE')
                     </form>
+                    @endcan
                 </div>
             </div>
             <hr>
         </div>
 
+        @if($thread->replies->count())
         <div class="col-12">
             <h5>Respostas</h5>
             <hr>
@@ -43,6 +47,7 @@
                 </div>
             @endforeach
         </div>
+        @endif
 
         <div class="col-12">
             <hr>
@@ -51,7 +56,13 @@
                 <div class="form-group">
                     <input type="hidden" name="thread_id" value="{{ $thread->id }}">
                     <label>Responder</label>
-                    <textarea name="reply" cols="30" rows="5" class="form-control"></textarea>
+                    <textarea name="reply" cols="30" rows="5" class="form-control @error('reply') is-invalid @enderror">{{old('reply')}}</textarea>
+
+                    @error('reply')
+                    <div class="invalid-feedback">
+                        {{$message}}
+                    </div>
+                    @enderror
                 </div>
                 <button type="submit" class="btn btn-success">Responder</button>
             </form>
