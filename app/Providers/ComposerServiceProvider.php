@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Channel;
 use Illuminate\Support\ServiceProvider;
 
 class ComposerServiceProvider extends ServiceProvider
@@ -23,6 +24,11 @@ class ComposerServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        view()->composer('layouts.app', 'App\Http\Views\ChannelViewComposer@compose');
+        view()->composer('layouts.app', function ($view){
+            $channels = Channel::all(['slug', 'name']);
+            $view->with(compact('channels'));
+        });
+
+        view()->composer('layouts.manager', 'App\Http\views\MenuViewComposer@composer');
     }
 }
