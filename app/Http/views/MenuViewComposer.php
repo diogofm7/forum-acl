@@ -2,24 +2,49 @@
 namespace App\Http\views;
 
 
+use App\Module;
+
 class MenuViewComposer
 {
+    private $module;
+
+    public function __construct(Module $module)
+    {
+        $this->module = $module;
+    }
+
     public function composer($view){
 
-        $roleUser = auth()->user()->role;
+        $user = auth()->user();
 
-        $modulesFiltered = [];
+        $modulesFiltered = session()->get('modules') ?: [];
 
-        foreach ($roleUser->modules as $key => $module){
-            $modulesFiltered[$key]['name'] = $module->name;
+        if(!$modulesFiltered){
+            if ($user->isAdmin()){
+                $modulesFiltered = $this->getModules($this->module);
+            }else{
 
-            foreach ($module->resources as $resource){
-                if ($resource->roles->contains($roleUser)){
-                    $modulesFiltered[$key]['resources'][] = $resource;
+                $modules = $this->getModules($user->role->modules());
+
+                foreach ($modules as $key => $module){
+                    $modulesFiltered[$key]['name'] = $module->name;
+
+                    foreach ($module->resources as $k => $resource){
+                        if ($resource->roles->contains($user->role)){
+                            $modulesFiltered[$key]['resources'][$k] = $resource;
+                        }
+                    }
                 }
             }
+            session()->put('modules', $modulesFiltered);
         }
-
         return $view->with(compact('modulesFiltered'));
+    }
+
+    public function getModules($modules)
+    {
+        return $modules->with(['resources' => function($q){
+            return $q->where('is_menu', true);
+        }])->get();
     }
 }
