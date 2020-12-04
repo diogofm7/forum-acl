@@ -36,6 +36,8 @@ class ThreadController extends Controller
             $threads = $this->thread->orderBy('created_at', 'DESC')->paginate(15);
         }
 
+        $threads->load(['user', 'channel', 'replies']);
+
         return view('threads.index', compact('threads'));
     }
 
